@@ -1,7 +1,7 @@
 import boto3
 import botocore.exceptions as ClientError
 ec2 = boto3.client('ec2')
-# 1. Crear un Security Group que permita tráfico web desde cualquier IP
+#  Crear un Security Group que permita tráfico web desde cualquier IP
 sg_name = 'web-sg-boto3'
 try:
     response = ec2.create_security_group(
@@ -28,7 +28,7 @@ except ClientError as e:
     else:
         raise
 
-# 2. Asociar el SG a la instancia EC2 creada anteriormente
+#  Asociar el SG a la instancia EC2 creada anteriormente
 
 # Obtener la primera instancia EC2 cuyo tag Name sea 'webserver-devops'
 instances = ec2.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': ['webserver-devops']}])
@@ -43,6 +43,9 @@ if not instance_id:
     raise Exception("No se encontró ninguna instancia con el tag 'webserver-devops'.")
 
 ec2.modify_instance_attribute(InstanceId=instance_id, Groups=[sg_id])
+
+
+# Muestra el ID de la instancia asociado al SG que le pertenece
 print(f"SG {sg_id} asociado a la instancia {instance_id}")
 
 print("Ahora navegue a la IP pública de la instancia para verificar el acceso web.")
