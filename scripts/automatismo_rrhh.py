@@ -69,9 +69,11 @@ DB_INSTANCE_ID = "rrhh-mysql"
 DB_NAME = "rrhh_app"
 DB_USER = "admin"
 WEB_SG_NAME = "rrhh-web-sg"
+DB_SG_NAME  = "rrhh-db-sg"
 EC2_NAME_TAG = "rrhh-webserver"
 AMI_ID = "ami-06b21ccaeff8cd686"
 INSTANCE_PROFILE_NAME = "LabInstanceProfile"
+
 
 print("****** Automatismo RRHH – Inicio ******\n")
 
@@ -194,9 +196,8 @@ while True:
 
     time.sleep(3)
 
-
 # ===============================
-# Crea SG + EC2 con la config del Apache
+# Crea SGs (web y BD) y luego EC2
 # ===============================
 
 print("[SG] Creando o recuperando Security Group web...")
@@ -204,8 +205,9 @@ print("[SG] Creando o recuperando Security Group web...")
 vpcs = ec2.describe_vpcs()
 vpc_id = vpcs["Vpcs"][0]["VpcId"]
 
-sg_id = None  # importante: la definimos antes
+sg_id = None  # SG de la web (EC2)
 
+# --- SG WEB (HTTP) ---
 try:
     response = ec2.create_security_group(
         GroupName=WEB_SG_NAME,
@@ -213,7 +215,7 @@ try:
         VpcId=vpc_id
     )
     sg_id = response["GroupId"]
-    print(f"[SG] SG creado: {sg_id}")
+    print(f"[SG] SG web creado: {sg_id}")
 
     ec2.authorize_security_group_ingress(
         GroupId=sg_id,
@@ -226,12 +228,12 @@ try:
             }
         ]
     )
-    print("[SG] Regla HTTP configurada.\n")
+    print("[SG] Regla HTTP 80/tcp configurada.\n")
 
 except ClientError as e:
     code = e.response["Error"]["Code"]
     if code == "InvalidGroup.Duplicate":
-        print(f"[SG] SG '{WEB_SG_NAME}' ya existe. Recuperando ID...")
+        print(f"[SG] SG web '{WEB_SG_NAME}' ya existe. Recuperando ID...")
         sgs = ec2.describe_security_groups(
             Filters=[
                 {"Name": "group-name", "Values": [WEB_SG_NAME]},
@@ -239,15 +241,99 @@ except ClientError as e:
             ]
         )
         sg_id = sgs["SecurityGroups"][0]["GroupId"]
-        print(f"[SG] Usando SG existente: {sg_id}\n")
+        print(f"[SG] Usando SG web existente: {sg_id}\n")
     else:
-        print("[SG] Error inesperado creando SG:", e)
+        print("[SG] Error inesperado creando SG web:", e)
         raise
 
 if sg_id is None:
-    raise SystemExit("ERROR: No se pudo determinar el ID del Security Group (sg_id).")
+    raise SystemExit("ERROR: No se pudo determinar el ID del Security Group web (sg_id).")
 
-print(f"[SG] Usando Security Group: {sg_id}\n")
+
+# --- SG BD (RDS MySQL) ---
+print("[SG] Creando o recuperando Security Group de base de datos...")
+
+db_sg_id = None  # SG de la RDS
+
+try:
+    response = ec2.create_security_group(
+        GroupName=DB_SG_NAME,
+        Description="Security Group MySQL para RDS RRHH",
+        VpcId=vpc_id
+    )
+    db_sg_id = response["GroupId"]
+    print(f"[SG] SG BD creado: {db_sg_id}")
+
+    # Permitir 3306 solo desde el SG web
+    ec2.authorize_security_group_ingress(
+        GroupId=db_sg_id,
+        IpPermissions=[
+            {
+                "IpProtocol": "tcp",
+                "FromPort": 3306,
+                "ToPort": 3306,
+                "UserIdGroupPairs": [
+                    {"GroupId": sg_id}
+                ],
+            }
+        ]
+    )
+    print("[SG] Regla MySQL 3306/tcp desde SG web configurada.\n")
+
+except ClientError as e:
+    code = e.response["Error"]["Code"]
+    if code == "InvalidGroup.Duplicate":
+        print(f"[SG] SG BD '{DB_SG_NAME}' ya existe. Recuperando ID...")
+        sgs = ec2.describe_security_groups(
+            Filters=[
+                {"Name": "group-name", "Values": [DB_SG_NAME]},
+                {"Name": "vpc-id", "Values": [vpc_id]},
+            ]
+        )
+        db_sg_id = sgs["SecurityGroups"][0]["GroupId"]
+        print(f"[SG] Usando SG BD existente: {db_sg_id}\n")
+    else:
+        print("[SG] Error inesperado creando SG BD:", e)
+        raise
+
+if db_sg_id is None:
+    raise SystemExit("ERROR: No se pudo determinar el ID del Security Group de BD (db_sg_id).")
+
+
+# Asocia SG BD a la instancia RDS
+
+
+print("[RDS] Asociando Security Group de BD a la instancia RDS...")
+
+info = rds.describe_db_instances(DBInstanceIdentifier=DB_INSTANCE_ID)
+current_sg_ids = [
+    sg["VpcSecurityGroupId"] for sg in info["DBInstances"][0]["VpcSecurityGroups"]
+]
+
+if db_sg_id not in current_sg_ids:
+    new_sg_ids = current_sg_ids + [db_sg_id]
+
+    rds.modify_db_instance(
+        DBInstanceIdentifier=DB_INSTANCE_ID,
+        VpcSecurityGroupIds=new_sg_ids,
+        ApplyImmediately=True,
+    )
+    print(f"[RDS] SGs actualizados para RDS: {new_sg_ids}")
+    print("[RDS] Esperando a que la instancia vuelva a 'available' tras el cambio de SG...")
+
+    while True:
+        info = rds.describe_db_instances(DBInstanceIdentifier=DB_INSTANCE_ID)
+        status = info["DBInstances"][0]["DBInstanceStatus"]
+        print(f"[RDS] Estado actual tras cambio de SG: {status}")
+        if status == "available":
+            break
+        time.sleep(5)
+else:
+    print("[RDS] El SG de BD ya estaba asociado al RDS.\n")
+
+
+print(f"[SG] Usando Security Group web: {sg_id}")
+print(f"[SG] Usando Security Group BD : {db_sg_id}\n")
 
 
 # Creacion de la EC2
@@ -268,7 +354,8 @@ systemctl enable --now httpd
 systemctl enable --now php-fpm
 
 # 4) Asegura que Apache pase .php a PHP-FPM
-echo '<FilesMatch \.php$>
+
+echo '<FilesMatch \\.php$>
   SetHandler "proxy:unix:/run/php-fpm/www.sock|fcgi://localhost/"
 </FilesMatch>' > /etc/httpd/conf.d/php-fpm.conf
 
