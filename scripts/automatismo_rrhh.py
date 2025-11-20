@@ -154,26 +154,44 @@ print("[S3] Archivos requeridos presentes. Continuando con el despliegue...\n")
 
 
 print("[RDS] Creando o recuperando RDS...")
-
+# Primero intento describir la instancia: si existe, no la creo
 try:
-    rds.create_db_instance(
-        DBInstanceIdentifier=DB_INSTANCE_ID,
-        AllocatedStorage=20,
-        DBName=DB_NAME,
-        Engine="mysql",
-        MasterUsername=DB_USER,
-        MasterUserPassword=RDS_ADMIN_PASSWORD,
-        DBInstanceClass="db.t3.micro",
-    )
-    print(f"[RDS] Creación iniciada: {DB_INSTANCE_ID}")
+    info = rds.describe_db_instances(DBInstanceIdentifier=DB_INSTANCE_ID)
+    print(f"[RDS] La instancia {DB_INSTANCE_ID} ya existe. Se reutiliza.")
+
 except ClientError as e:
-    if e.response["Error"]["Code"] == "DBInstanceAlreadyExistsFault":
-        print(f"[RDS] La instancia {DB_INSTANCE_ID} ya existe. Continuando...")
+    code = e.response["Error"]["Code"]
+
+    if code in ("DBInstanceNotFound", "DBInstanceNotFoundFault"):
+        print(f"[RDS] La instancia {DB_INSTANCE_ID} no existe. Creándola...")
+
+        rds.create_db_instance(
+            DBInstanceIdentifier=DB_INSTANCE_ID,
+            AllocatedStorage=20,
+            DBName=DB_NAME,
+            Engine="mysql",
+            MasterUsername=DB_USER,
+            MasterUserPassword=RDS_ADMIN_PASSWORD,
+            DBInstanceClass="db.t3.micro",
+        )
+        print(f"[RDS] Creación iniciada: {DB_INSTANCE_ID}")
     else:
-        print("[RDS] Error inesperado:", e)
+        print("[RDS] Error inesperado al verificar/crear la instancia:", e)
         raise
 
 print("[RDS] Esperando a que esté en estado 'available'...")
+
+while True:
+    info = rds.describe_db_instances(DBInstanceIdentifier=DB_INSTANCE_ID)
+    status = info["DBInstances"][0]["DBInstanceStatus"]
+    print(f"[RDS] Estado actual: {status}")
+
+    if status == "available":
+        DB_ENDPOINT = info["DBInstances"][0]["Endpoint"]["Address"]
+        print(f"[RDS] Listo. Endpoint: {DB_ENDPOINT}")
+        break
+
+    time.sleep(3)
 
 while True:
     info = rds.describe_db_instances(DBInstanceIdentifier=DB_INSTANCE_ID)
