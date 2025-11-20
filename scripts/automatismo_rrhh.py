@@ -268,12 +268,30 @@ print(f"[SG] Usando Security Group: {sg_id}\n")
 print("\n[EC2] Creando instancia EC2 web...")
 
 user_data = """#!/bin/bash
-yum update -y
-yum install -y httpd php
-systemctl enable httpd
-systemctl start httpd
+y# 1) Actualiza índices y paquetes
+sudo dnf clean all
+sudo dnf makecache
+sudo dnf -y update
 
-echo "<?php echo 'Servidor RRHH OK'; ?>" > /var/www/html/index.php
+# 2) Instala Apache + PHP 8.4 + mariadb y extensiones típicas
+sudo dnf -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105
+
+# 3) Habilita y arranca servicios
+sudo systemctl enable --now httpd
+sudo systemctl enable --now php-fpm
+
+# 4) Asegura que Apache pase .php a PHP-FPM
+# En AL2023 normalmente se instala /etc/httpd/conf.d/php-fpm.conf con esto,
+# pero si no existiera:
+echo '<FilesMatch \.php$>
+  SetHandler "proxy:unix:/run/php-fpm/www.sock|fcgi://localhost/"
+</FilesMatch>' | sudo tee /etc/httpd/conf.d/php-fpm.conf
+
+# 5) Archivo de prueba
+echo "<?php phpinfo(); ?>" | sudo tee /var/www/html/info.php
+
+# 6) Reinicia para tomar config
+sudo systemctl restart httpd php-fpm
 """
 
 response = ec2.run_instances(
@@ -342,7 +360,7 @@ commands = [
 # Mover init_db.sql FUERA del webroot, a /var/www
     f"mv /tmp/{SQL_KEY} /var/www/{SQL_KEY}",
 
-# Ejecutar el script SQL contra la RDS para crear tablas/datos
+# Ejecuta el script SQL contra la RDS para crear tablas/datos
 # (usa el cliente mariadb/mysql y las credenciales que ya tenemos)
     f'mysql -h {DB_ENDPOINT} -u {DB_USER} -p"{RDS_ADMIN_PASSWORD}" {DB_NAME} < /var/www/{SQL_KEY}',
 
@@ -387,7 +405,5 @@ print(output.get("StandardOutputContent", ""))
 print("\n=== DESPLIEGUE COMPLETADO EXITOSAMENTE ===")
 if public_ip:
     print(f"URL de la aplicación: http://{public_ip}/index.php")
-else:
-    print("La instancia no tiene IP pública, revisar configuración de red.")
 print(f"APP_USER: {APP_USER}")
-print(f"APP_PASS: {APP_PASS}")
+print(f"APP_PASS: {APP_PASS}") 
