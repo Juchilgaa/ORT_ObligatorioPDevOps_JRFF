@@ -190,19 +190,6 @@ while True:
         DB_ENDPOINT = info["DBInstances"][0]["Endpoint"]["Address"]
         print(f"[RDS] Listo. Endpoint: {DB_ENDPOINT}")
         break
-
-    time.sleep(3)
-
-while True:
-    info = rds.describe_db_instances(DBInstanceIdentifier=DB_INSTANCE_ID)
-    status = info["DBInstances"][0]["DBInstanceStatus"]
-    print(f"[RDS] Estado actual: {status}")
-
-    if status == "available":
-        DB_ENDPOINT = info["DBInstances"][0]["Endpoint"]["Address"]
-        print(f"[RDS] Listo. Endpoint: {DB_ENDPOINT}")
-        break
-
 # Espera dinámica: consulta cada 3 segundos hasta que el estado sea 'available'
 
     time.sleep(3)
@@ -268,30 +255,28 @@ print(f"[SG] Usando Security Group: {sg_id}\n")
 print("\n[EC2] Creando instancia EC2 web...")
 
 user_data = """#!/bin/bash
-y# 1) Actualiza índices y paquetes
-sudo dnf clean all
-sudo dnf makecache
-sudo dnf -y update
+# 1) Actualiza índices y paquetes
+dnf clean all
+dnf makecache
+dnf -y update
 
 # 2) Instala Apache + PHP 8.4 + mariadb y extensiones típicas
-sudo dnf -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105
+dnf -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105
 
 # 3) Habilita y arranca servicios
-sudo systemctl enable --now httpd
-sudo systemctl enable --now php-fpm
+systemctl enable --now httpd
+systemctl enable --now php-fpm
 
 # 4) Asegura que Apache pase .php a PHP-FPM
-# En AL2023 normalmente se instala /etc/httpd/conf.d/php-fpm.conf con esto,
-# pero si no existiera:
 echo '<FilesMatch \.php$>
   SetHandler "proxy:unix:/run/php-fpm/www.sock|fcgi://localhost/"
-</FilesMatch>' | sudo tee /etc/httpd/conf.d/php-fpm.conf
+</FilesMatch>' > /etc/httpd/conf.d/php-fpm.conf
 
 # 5) Archivo de prueba
-echo "<?php phpinfo(); ?>" | sudo tee /var/www/html/info.php
+echo "<?php phpinfo(); ?>" > /var/www/html/info.php
 
 # 6) Reinicia para tomar config
-sudo systemctl restart httpd php-fpm
+systemctl restart httpd php-fpm
 """
 
 response = ec2.run_instances(
@@ -344,35 +329,44 @@ EOF
 """
 
 commands = [
-# Paquetes necesarios: web, php, cliente MySQL, awscli, unzip
-    "yum install -y httpd php awscli unzip mariadb105 || true",
-    "systemctl enable httpd || true",
-    "systemctl start httpd || true",
+    # 1) Instalar Apache + PHP-FPM + MySQL client + extensiones típicas
+    "dnf clean all || yum clean all",
+    "dnf makecache || true",
+    "dnf -y update || yum -y update || true",
+    "dnf -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105 awscli unzip || yum -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105 awscli unzip",
 
-# Descargar ZIP de la app y el SQL desde S3 a /tmp
+    # 2) Habilitar y arrancar servicios
+    "systemctl enable --now httpd || true",
+    "systemctl enable --now php-fpm || true",
+
+    # 3) Asegurar que Apache pase .php a PHP-FPM (php-fpm.conf)
+    "echo '<FilesMatch \\.php$>' > /etc/httpd/conf.d/php-fpm.conf",
+    "echo '  SetHandler \"proxy:unix:/run/php-fpm/www.sock|fcgi://localhost/\"' >> /etc/httpd/conf.d/php-fpm.conf",
+    "echo '</FilesMatch>' >> /etc/httpd/conf.d/php-fpm.conf",
+
+    # 4) Descargar ZIP de la app y el SQL desde S3 a /tmp
     f"aws s3 cp s3://{RRHH_BUCKET}/{APP_ZIP_KEY} /tmp/{APP_ZIP_KEY}",
     f"aws s3 cp s3://{RRHH_BUCKET}/{SQL_KEY} /tmp/{SQL_KEY}",
 
-# Dejar la app en /var/www/html
+    # 5) Dejar la app en /var/www/html
     "rm -rf /var/www/html/*",
     f"unzip -o /tmp/{APP_ZIP_KEY} -d /var/www/html",
 
-# Mover init_db.sql FUERA del webroot, a /var/www
+    # 6) Mover init_db.sql FUERA del webroot, a /var/www
     f"mv /tmp/{SQL_KEY} /var/www/{SQL_KEY}",
 
-# Ejecuta el script SQL contra la RDS para crear tablas/datos
-# (usa el cliente mariadb/mysql y las credenciales que ya tenemos)
+    # 7) Ejecutar el script SQL contra la RDS para crear tablas/datos
     f'mysql -h {DB_ENDPOINT} -u {DB_USER} -p"{RDS_ADMIN_PASSWORD}" {DB_NAME} < /var/www/{SQL_KEY}',
 
-# Crear archivo .env en /var/www (.env fuera del webroot)
+    # 8) Crear archivo .env en /var/www (.env fuera del webroot)
     env_file_cmd,
     "chmod 600 /var/www/.env",
     "chown apache:apache /var/www/.env",
 
-# Asegurar permisos para que Apache pueda leer todo el código
+    # 9) Asegurar permisos para que Apache pueda leer todo el código
     "chown -R apache:apache /var/www/html",
 
-# Reiniciar servicios web
+    # 10) Reiniciar servicios web
     "systemctl restart httpd || true",
     "systemctl restart php-fpm || true",
 ]
