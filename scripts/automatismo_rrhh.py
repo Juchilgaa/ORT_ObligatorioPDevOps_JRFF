@@ -27,6 +27,7 @@ from botocore.exceptions import ClientError
 # VARIABLES DE ENTORNO
 # ===============================
 
+
 RDS_ADMIN_PASSWORD = os.environ.get("RDS_ADMIN_PASSWORD")
 APP_USER = os.environ.get("APP_USER")
 APP_PASS = os.environ.get("APP_PASS")
@@ -34,6 +35,8 @@ APP_PASS = os.environ.get("APP_PASS")
 # ===========================================
 # NOMBRE BUCKET S3
 # ===========================================
+
+
 RRHH_BUCKET = "jrff-rrhh-app-pdevops2k25"
 APP_ZIP_KEY = "paquete_app_rrhh.zip"
 SQL_KEY = "init_db.sql"
@@ -46,10 +49,10 @@ print("=======================================\n")
 
 
 
-
 # ==========
 # CLIENTES BOTO3
 # ==========
+
 
 ec2 = boto3.client("ec2")
 rds = boto3.client("rds")
@@ -57,10 +60,11 @@ ssm = boto3.client("ssm")
 s3 = boto3.client("s3")
 
 
-
 # ===============================
 # CONSTANTES
 # ===============================
+
+
 DB_INSTANCE_ID = "rrhh-mysql"
 DB_NAME = "rrhh_app"
 DB_USER = "admin"
@@ -77,11 +81,10 @@ print("****** Automatismo RRHH – Inicio ******\n")
 # ===========================================
 
 
-
 print(f"[S3] Creando/verificando bucket S3 global: {RRHH_BUCKET}")
 
 try:
-    # Intentar crearlo. Si el nombre ya existe en otra cuenta → BucketAlreadyExists.
+# Intentar crearlo. Si el nombre ya existe en otra cuenta → BucketAlreadyExists.
     s3.create_bucket(Bucket=RRHH_BUCKET)
     print(f"[S3] Bucket creado correctamente: {RRHH_BUCKET}")
 except ClientError as e:
@@ -145,10 +148,10 @@ except ClientError:
 print("[S3] Archivos requeridos presentes. Continuando con el despliegue...\n")
 
 
-
 # ===============================
 # Crea RDS - Mysql
 # ===============================
+
 
 print("[RDS] Creando o recuperando RDS...")
 
@@ -186,9 +189,63 @@ while True:
 
     time.sleep(3)
 
+
 # ===============================
-# Crea EC2 con la config del Apache
+# Crea SG + EC2 con la config del Apache
 # ===============================
+
+print("[SG] Creando o recuperando Security Group web...")
+
+vpcs = ec2.describe_vpcs()
+vpc_id = vpcs["Vpcs"][0]["VpcId"]
+
+sg_id = None  # importante: la definimos antes
+
+try:
+    response = ec2.create_security_group(
+        GroupName=WEB_SG_NAME,
+        Description="Security Group HTTP para app RRHH",
+        VpcId=vpc_id
+    )
+    sg_id = response["GroupId"]
+    print(f"[SG] SG creado: {sg_id}")
+
+    ec2.authorize_security_group_ingress(
+        GroupId=sg_id,
+        IpPermissions=[
+            {
+                "IpProtocol": "tcp",
+                "FromPort": 80,
+                "ToPort": 80,
+                "IpRanges": [{"CidrIp": "0.0.0.0/0"}],
+            }
+        ]
+    )
+    print("[SG] Regla HTTP configurada.\n")
+
+except ClientError as e:
+    code = e.response["Error"]["Code"]
+    if code == "InvalidGroup.Duplicate":
+        print(f"[SG] SG '{WEB_SG_NAME}' ya existe. Recuperando ID...")
+        sgs = ec2.describe_security_groups(
+            Filters=[
+                {"Name": "group-name", "Values": [WEB_SG_NAME]},
+                {"Name": "vpc-id", "Values": [vpc_id]},
+            ]
+        )
+        sg_id = sgs["SecurityGroups"][0]["GroupId"]
+        print(f"[SG] Usando SG existente: {sg_id}\n")
+    else:
+        print("[SG] Error inesperado creando SG:", e)
+        raise
+
+if sg_id is None:
+    raise SystemExit("ERROR: No se pudo determinar el ID del Security Group (sg_id).")
+
+print(f"[SG] Usando Security Group: {sg_id}\n")
+
+
+# Creacion de la EC2
 
 print("\n[EC2] Creando instancia EC2 web...")
 
@@ -231,9 +288,11 @@ public_ip = desc["Reservations"][0]["Instances"][0]["PublicIpAddress"]
 
 print(f"[EC2] IP pública: {public_ip}")
 
+
 # ===============================
 # Config APP via SSM
 # ===============================
+
 
 print("[SSM] Configurando app RRHH dentro de EC2...")
 
@@ -249,35 +308,35 @@ EOF
 """
 
 commands = [
-    # Paquetes necesarios: web, php, cliente MySQL, awscli, unzip
+# Paquetes necesarios: web, php, cliente MySQL, awscli, unzip
     "yum install -y httpd php awscli unzip mariadb105 || true",
     "systemctl enable httpd || true",
     "systemctl start httpd || true",
 
-    # Descargar ZIP de la app y el SQL desde S3 a /tmp
+# Descargar ZIP de la app y el SQL desde S3 a /tmp
     f"aws s3 cp s3://{RRHH_BUCKET}/{APP_ZIP_KEY} /tmp/{APP_ZIP_KEY}",
     f"aws s3 cp s3://{RRHH_BUCKET}/{SQL_KEY} /tmp/{SQL_KEY}",
 
-    # Dejar la app en /var/www/html
+# Dejar la app en /var/www/html
     "rm -rf /var/www/html/*",
     f"unzip -o /tmp/{APP_ZIP_KEY} -d /var/www/html",
 
-    # Mover init_db.sql FUERA del webroot, a /var/www
+# Mover init_db.sql FUERA del webroot, a /var/www
     f"mv /tmp/{SQL_KEY} /var/www/{SQL_KEY}",
 
-    # Ejecutar el script SQL contra la RDS para crear tablas/datos
-    # (usa el cliente mariadb/mysql y las credenciales que ya tenemos)
+# Ejecutar el script SQL contra la RDS para crear tablas/datos
+# (usa el cliente mariadb/mysql y las credenciales que ya tenemos)
     f'mysql -h {DB_ENDPOINT} -u {DB_USER} -p"{RDS_ADMIN_PASSWORD}" {DB_NAME} < /var/www/{SQL_KEY}',
 
-    # Crear archivo .env en /var/www (.env fuera del webroot)
+# Crear archivo .env en /var/www (.env fuera del webroot)
     env_file_cmd,
     "chmod 600 /var/www/.env",
     "chown apache:apache /var/www/.env",
 
-    # Asegurar permisos para que Apache pueda leer todo el código
+# Asegurar permisos para que Apache pueda leer todo el código
     "chown -R apache:apache /var/www/html",
 
-    # Reiniciar servicios web
+# Reiniciar servicios web
     "systemctl restart httpd || true",
     "systemctl restart php-fpm || true",
 ]
