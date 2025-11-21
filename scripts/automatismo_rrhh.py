@@ -66,7 +66,7 @@ s3 = boto3.client("s3")
 
 
 DB_INSTANCE_ID = "rrhh-mysql"
-DB_NAME = "rrhh_app"
+DB_NAME = "demo_db"
 DB_USER = "admin"
 WEB_SG_NAME = "rrhh-web-sg"
 DB_SG_NAME  = "rrhh-db-sg"
