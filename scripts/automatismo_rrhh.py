@@ -414,15 +414,13 @@ response = ec2.run_instances(
 )
 
 instance_id = response["Instances"][0]["InstanceId"]
-print(f"[EC2] Instancia creada: {instance_id}")
+print(f"[EC2] La Instancia creada es: {instance_id}")
 
 ec2.create_tags(
     Resources=[instance_id],
     Tags=[{"Key": "Name", "Value": EC2_NAME_TAG}]
 )
-
-print("[EC2] Tag Name aplicado.")
-print("[EC2] Esperando estado 'instance_status_ok'...")
+print("[EC2] Esperando estado... 'instance_status_ok'...")
 
 waiter = ec2.get_waiter("instance_status_ok")
 waiter.wait(InstanceIds=[instance_id])
@@ -431,7 +429,7 @@ print("[EC2] La instancia está lista.")
 desc = ec2.describe_instances(InstanceIds=[instance_id])
 public_ip = desc["Reservations"][0]["Instances"][0]["PublicIpAddress"]
 
-print(f"[EC2] IP pública: {public_ip}")
+print(f"[EC2] La IP pública asignada es: {public_ip}")
 
 
 # ===============================
@@ -459,12 +457,9 @@ commands = [
     "yum -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105 awscli unzip",
     "systemctl enable --now httpd || true",
     "systemctl enable --now php-fpm || true",
-
-    # 3) Asegurar que Apache pase .php a PHP-FPM (php-fpm.conf)
     "echo '<FilesMatch \\.php$>' > /etc/httpd/conf.d/php-fpm.conf",
     "echo '  SetHandler \"proxy:unix:/run/php-fpm/www.sock|fcgi://localhost/\"' >> /etc/httpd/conf.d/php-fpm.conf",
     "echo '</FilesMatch>' >> /etc/httpd/conf.d/php-fpm.conf",
-
     # 4) Descargar ZIP de la app y el SQL desde S3 a /tmp
     f"aws s3 cp s3://{RRHH_BUCKET}/{APP_ZIP_KEY} /tmp/{APP_ZIP_KEY}",
     f"aws s3 cp s3://{RRHH_BUCKET}/{SQL_KEY} /tmp/{SQL_KEY}",
@@ -505,7 +500,7 @@ while True:
 print("\n[SSM] OUTPUT:")
 print(output.get("StandardOutputContent", ""))
 
-print("\n=== DESPLIEGUE COMPLETADO EXITOSAMENTE ===")
+print("\n=== DESPLIEGUE COMPLETADO  ===")
 if public_ip:
     print(f"URL de la aplicación: http://{public_ip}/index.php")
 print(f"APP_USER: {APP_USER}")
