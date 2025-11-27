@@ -5,37 +5,46 @@ Script lineal (sin funciones) que automatiza el despliegue RRHH en AWS.
 
 Flujo:
 - Crea / verifica bucket S3 global "jrff-rrhh-app-pdevops2k25"
-- Pide al usuario que suba:
-    - paquete_app_rrhh.zip
-    - init_db.sql
-  y espera un "OK" por stdin.
+- Toma obligatorio-main.zip desde el directorio del script:
+    - Lo descomprime.
+    - Empaqueta la app (sin .sql) en paquete_app_rrhh.zip.
+    - Sube paquete_app_rrhh.zip e init_db.sql al bucket.
 - Verifica que esos objetos estén en el bucket.
 - Crea / reutiliza RDS MySQL.
-- Crea / reutiliza Security Group web.
-- Crea EC2 con Apache/PHP.
+- Crea / reutiliza Security Group web y BD.
+- Crea EC2.
 - Configura la app vía SSM usando los archivos del bucket.
-
 """
 
 import os
 import time
+import zipfile
+import tempfile
+import shutil
+
 import boto3
 from botocore.exceptions import ClientError
-
 
 # ===============================
 # VARIABLES DE ENTORNO
 # ===============================
 
-
 RDS_ADMIN_PASSWORD = os.environ.get("RDS_ADMIN_PASSWORD")
 APP_USER = os.environ.get("APP_USER")
 APP_PASS = os.environ.get("APP_PASS")
 
-# ===========================================
-# NOMBRE BUCKET S3
-# ===========================================
+if not RDS_ADMIN_PASSWORD or not APP_USER or not APP_PASS:
+    raise SystemExit(
+        "ERROR: Debés definir las variables de entorno RDS_ADMIN_PASSWORD, APP_USER y APP_PASS.\n"
+        "Ejemplo:\n"
+        "  export RDS_ADMIN_PASSWORD='tu_pass_admin'\n"
+        "  export APP_USER='admin'\n"
+        "  export APP_PASS='admin123'\n"
+    )
 
+# ===========================================
+# NOMBRE BUCKET S3 / ARCHIVOS
+# ===========================================
 
 RRHH_BUCKET = "jrff-rrhh-app-pdevops2k25"
 APP_ZIP_KEY = "paquete_app_rrhh.zip"
@@ -47,46 +56,41 @@ print("=======================================")
 print(f" RRHH_BUCKET = {RRHH_BUCKET}")
 print("=======================================\n")
 
+# Rutas locales (directorio del script)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+OBLIG_ZIP_NAME = "obligatorio-main.zip"
+OBLIG_ZIP_PATH = os.path.join(SCRIPT_DIR, OBLIG_ZIP_NAME)
 
-
-# ==========
-# CLIENTES BOTO3
-# ==========
-
+# ========== CLIENTES BOTO3 ==========
 
 ec2 = boto3.client("ec2")
 rds = boto3.client("rds")
 ssm = boto3.client("ssm")
 s3 = boto3.client("s3")
 
-
 # ===============================
 # CONSTANTES
 # ===============================
 
-
 DB_INSTANCE_ID = "rrhh-mysql"
-DB_NAME = "demo_db"
+DB_NAME = "demo_db"  # Nombre de la BD creada por el archivo init_db.sql
 DB_USER = "admin"
 WEB_SG_NAME = "rrhh-web-sg"
-DB_SG_NAME  = "rrhh-db-sg"
+DB_SG_NAME = "rrhh-db-sg"
 EC2_NAME_TAG = "rrhh-webserver"
 AMI_ID = "ami-06b21ccaeff8cd686"
 INSTANCE_PROFILE_NAME = "LabInstanceProfile"
 
-
 print("****** Automatismo RRHH – Inicio ******\n")
-
 
 # ===========================================
 # Crea y verifica S3
 # ===========================================
 
-
 print(f"[S3] Creando/verificando bucket S3 global: {RRHH_BUCKET}")
 
 try:
-# Intentar crearlo. Si el nombre ya existe en otra cuenta → BucketAlreadyExists.
+    # Intentar crearlo. Si el nombre ya existe en otra cuenta → BucketAlreadyExists.
     s3.create_bucket(Bucket=RRHH_BUCKET)
     print(f"[S3] Bucket creado correctamente: {RRHH_BUCKET}")
 except ClientError as e:
@@ -109,58 +113,105 @@ try:
 except ClientError as e:
     raise SystemExit(f"[S3] Error al verificar el bucket luego de crearlo: {e}")
 
-# Mensaje para que el usuario suba los archivos
-print("############################################################")
-print("# ATENCIÓN – ACCIÓN REQUERIDA")
-print("# Se creó/verificó el bucket S3:")
-print(f"#   s3://{RRHH_BUCKET}")
-print("# Ahora debés subir MANUALMENTE estos archivos al bucket:")
-print(f"#   1) {APP_ZIP_KEY}  (ZIP con la aplicación PHP)")
-print(f"#   2) {SQL_KEY}      (script SQL con estructura/datos)")
-print("#")
-print("# Cuando termines de subirlos, escribí OK y presioná Enter")
-print("############################################################\n")
+# ===========================================
+# Empaquetar app desde obligatorio-main.zip y subir a S3
+# ===========================================
 
-respuesta = input("Escribí OK cuando los archivos estén subidos al bucket: ").strip().lower()
-if respuesta != "ok":
-    raise SystemExit("Se aborta el despliegue porque no se confirmó 'OK'.")
+print("[S3] Preparando archivos a partir de obligatorio-main.zip...")
 
-print("\n[S3] Verificando que los archivos estén presentes en el bucket...")
+if not os.path.isfile(OBLIG_ZIP_PATH):
+    raise SystemExit(
+        f"ERROR: No se encontró el archivo '{OBLIG_ZIP_NAME}' en el directorio del script:\n"
+        f"  {SCRIPT_DIR}\n"
+        "Descargá o copiá obligatorio-main.zip allí y volvé a ejecutar."
+    )
 
-# Verificar existencia de paquete_app_rrhh.zip
+temp_dir = tempfile.mkdtemp(prefix="rrhh_oblig_")
+print(f"[TMP] Directorio temporal: {temp_dir}")
+
+try:
+    # 1) Descomprimir obligatorio-main.zip
+    print(f"[ZIP] Descomprimiendo {OBLIG_ZIP_PATH} ...")
+    with zipfile.ZipFile(OBLIG_ZIP_PATH, "r") as zf:
+        zf.extractall(temp_dir)
+
+    app_root = os.path.join(temp_dir, "obligatorio-main")
+    if not os.path.isdir(app_root):
+        raise SystemExit(
+            f"ERROR: No se encontró la carpeta 'obligatorio-main' dentro del ZIP.\n"
+            "Revisá la estructura de obligatorio-main.zip."
+        )
+
+    # 2) Ubicar el SQL (asumimos init_db.sql en la raíz de obligatorio-main)
+    local_sql_path = os.path.join(app_root, SQL_KEY)
+    if not os.path.isfile(local_sql_path):
+        raise SystemExit(
+            f"ERROR: No se encontró '{SQL_KEY}' dentro de obligatorio-main.\n"
+            "Asegurate de que el SQL esté con ese nombre en la raíz de la app."
+        )
+
+    # 3) Crear paquete_app_rrhh.zip con el código de la app (excluyendo .sql)
+    local_app_zip_path = os.path.join(temp_dir, APP_ZIP_KEY)
+    print(f"[ZIP] Creando {local_app_zip_path} desde {app_root} (sin incluir .sql)...")
+
+    with zipfile.ZipFile(local_app_zip_path, "w", zipfile.ZIP_DEFLATED) as app_zip:
+        for root, dirs, files in os.walk(app_root):
+            for fname in files:
+                # Excluir archivos .sql del paquete de la app
+                if fname.lower().endswith(".sql"):
+                    continue
+                full_path = os.path.join(root, fname)
+                # Ruta relativa dentro del ZIP (sin el prefijo app_root)
+                rel_path = os.path.relpath(full_path, app_root)
+                app_zip.write(full_path, arcname=rel_path)
+
+    print("[ZIP] paquete_app_rrhh.zip creado correctamente.")
+
+    # 4) Subir paquete_app_rrhh.zip e init_db.sql a S3
+    print(f"[S3] Subiendo {local_app_zip_path} a s3://{RRHH_BUCKET}/{APP_ZIP_KEY} ...")
+    s3.upload_file(local_app_zip_path, RRHH_BUCKET, APP_ZIP_KEY)
+    print("[S3] Upload paquete_app_rrhh.zip OK.")
+
+    print(f"[S3] Subiendo {local_sql_path} a s3://{RRHH_BUCKET}/{SQL_KEY} ...")
+    s3.upload_file(local_sql_path, RRHH_BUCKET, SQL_KEY)
+    print("[S3] Upload init_db.sql OK.\n")
+
+finally:
+    # Limpiar directorio temporal
+    shutil.rmtree(temp_dir, ignore_errors=True)
+    print(f"[TMP] Directorio temporal eliminado: {temp_dir}\n")
+
+# 5) Verificar existencia de objetos en S3
+print("[S3] Verificando que los archivos estén presentes en el bucket...")
+
 try:
     s3.head_object(Bucket=RRHH_BUCKET, Key=APP_ZIP_KEY)
     print(f"[S3] Encontrado: s3://{RRHH_BUCKET}/{APP_ZIP_KEY}")
 except ClientError:
     raise SystemExit(
         f"ERROR: No se encontró el objeto '{APP_ZIP_KEY}' en el bucket '{RRHH_BUCKET}'.\n"
-        "Verificá que el archivo esté subido con ese nombre exacto."
+        "Algo falló durante la subida automática."
     )
 
-# Verificar existencia de init_db.sql
 try:
     s3.head_object(Bucket=RRHH_BUCKET, Key=SQL_KEY)
     print(f"[S3] Encontrado: s3://{RRHH_BUCKET}/{SQL_KEY}")
 except ClientError:
     raise SystemExit(
         f"ERROR: No se encontró el objeto '{SQL_KEY}' en el bucket '{RRHH_BUCKET}'.\n"
-        "Verificá que el archivo esté subido con ese nombre exacto."
+        "Algo falló durante la subida automática."
     )
 
 print("[S3] Archivos requeridos presentes. Continuando con el despliegue...\n")
-
 
 # ===============================
 # Crea RDS - Mysql
 # ===============================
 
-
 print("[RDS] Creando o recuperando RDS...")
-# Primero intento describir la instancia: si existe, no la creo
 try:
     info = rds.describe_db_instances(DBInstanceIdentifier=DB_INSTANCE_ID)
     print(f"[RDS] La instancia {DB_INSTANCE_ID} ya existe. Se reutiliza.")
-
 except ClientError as e:
     code = e.response["Error"]["Code"]
 
@@ -192,7 +243,6 @@ while True:
         DB_ENDPOINT = info["DBInstances"][0]["Endpoint"]["Address"]
         print(f"[RDS] Listo. Endpoint: {DB_ENDPOINT}")
         break
-# Espera dinámica: consulta cada 3 segundos hasta que el estado sea 'available'
 
     time.sleep(3)
 
@@ -249,7 +299,6 @@ except ClientError as e:
 if sg_id is None:
     raise SystemExit("ERROR: No se pudo determinar el ID del Security Group web (sg_id).")
 
-
 # --- SG BD (RDS MySQL) ---
 print("[SG] Creando o recuperando Security Group de base de datos...")
 
@@ -264,7 +313,6 @@ try:
     db_sg_id = response["GroupId"]
     print(f"[SG] SG BD creado: {db_sg_id}")
 
-    # Permitir 3306 solo desde el SG web
     ec2.authorize_security_group_ingress(
         GroupId=db_sg_id,
         IpPermissions=[
@@ -299,9 +347,7 @@ except ClientError as e:
 if db_sg_id is None:
     raise SystemExit("ERROR: No se pudo determinar el ID del Security Group de BD (db_sg_id).")
 
-
 # Asocia SG BD a la instancia RDS
-
 
 print("[RDS] Asociando Security Group de BD a la instancia RDS...")
 
@@ -331,40 +377,12 @@ if db_sg_id not in current_sg_ids:
 else:
     print("[RDS] El SG de BD ya estaba asociado al RDS.\n")
 
-
 print(f"[SG] Usando Security Group web: {sg_id}")
 print(f"[SG] Usando Security Group BD : {db_sg_id}\n")
 
-
-# Creacion de la EC2
+# Creación de la EC2
 
 print("\n[EC2] Creando instancia EC2 web...")
-
-user_data = """#!/bin/bash
-# 1) Actualiza índices y paquetes
-dnf clean all
-dnf makecache
-dnf -y update
-
-# 2) Instala Apache + PHP 8.4 + mariadb y extensiones típicas
-dnf -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105
-
-# 3) Habilita y arranca servicios
-systemctl enable --now httpd
-systemctl enable --now php-fpm
-
-# 4) Asegura que Apache pase .php a PHP-FPM
-
-echo '<FilesMatch \\.php$>
-  SetHandler "proxy:unix:/run/php-fpm/www.sock|fcgi://localhost/"
-</FilesMatch>' > /etc/httpd/conf.d/php-fpm.conf
-
-# 5) Archivo de prueba
-echo "<?php phpinfo(); ?>" > /var/www/html/info.php
-
-# 6) Reinicia para tomar config
-systemctl restart httpd php-fpm
-"""
 
 response = ec2.run_instances(
     ImageId=AMI_ID,
@@ -373,7 +391,6 @@ response = ec2.run_instances(
     MaxCount=1,
     IamInstanceProfile={"Name": INSTANCE_PROFILE_NAME},
     SecurityGroupIds=[sg_id],
-    UserData=user_data
 )
 
 instance_id = response["Instances"][0]["InstanceId"]
@@ -396,11 +413,9 @@ public_ip = desc["Reservations"][0]["Instances"][0]["PublicIpAddress"]
 
 print(f"[EC2] IP pública: {public_ip}")
 
-
 # ===============================
 # Config APP via SSM
 # ===============================
-
 
 print("[SSM] Configurando app RRHH dentro de EC2...")
 
@@ -420,7 +435,8 @@ commands = [
     "dnf clean all || yum clean all",
     "dnf makecache || true",
     "dnf -y update || yum -y update || true",
-    "dnf -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105 awscli unzip || yum -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105 awscli unzip",
+    "dnf -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105 awscli unzip || "
+    "yum -y install httpd php php-cli php-fpm php-common php-mysqlnd mariadb105 awscli unzip",
 
     # 2) Habilitar y arrancar servicios
     "systemctl enable --now httpd || true",
@@ -487,4 +503,4 @@ print("\n=== DESPLIEGUE COMPLETADO EXITOSAMENTE ===")
 if public_ip:
     print(f"URL de la aplicación: http://{public_ip}/index.php")
 print(f"APP_USER: {APP_USER}")
-print(f"APP_PASS: {APP_PASS}") 
+print(f"APP_PASS: {APP_PASS}")
