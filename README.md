@@ -5,25 +5,25 @@ Este script automatiza la creación de usuarios en Linux a partir de un archivo 
 
 ## Validación de parámetros:
 
-Procesa los modificadores -i y -c <pass>
+- Procesa los modificadores -i y -c <pass>
 
-Rechaza modificadores inválidos
+- Rechaza modificadores inválidos
 
-Exige exactamente 1 archivo de entrada tras procesar opciones
+- Exige exactamente 1 archivo de entrada tras procesar opciones
 
 ## Validación del archivo de entrada:
 
-Verifica que el archivo exista
+- Verifica que el archivo exista
 
-Sea un archivo regular
+- Sea un archivo regular
 
-Tenga permisos de lectura
+- Tenga permisos de lectura
 
-Tenga exactamente 5 campos separados por “:”
+- Tenga exactamente 5 campos separados por “:”
 
-El nombre de usuario (campo 1) no puede estar vacío
+- El nombre de usuario (campo 1) no puede estar vacío
 
-El campo “crear home” debe ser SI o NO
+- El campo “crear home” debe ser SI o NO
 
 # Requisitos del sistema
 
@@ -46,19 +46,14 @@ Además, el script cuenta con una opción propia:
 
 # Modo informativo (-i)
 
-Muestra:
+Despliega: 
 
-Comentario
-
-Directorio home
-
-SI/NO de creación del home
-
-Shell asignada
-
-Aviso si no se pudo asignar contraseña
-
-Aviso si el usuario no pudo ser creado
+- Comentario
+- Directorio home
+- SI/NO de creación del home
+- Shell asignada
+- Aviso si no se pudo asignar contraseña
+- Aviso si el usuario no pudo ser creado
 
 # Reporte final
 
@@ -66,7 +61,7 @@ Al finalizar, si se usó -i, muestra la cantidad de usuarios creados con éxito.
 
 # Formato del archivo de entrada
 
-El archivo debe contener cinco campos separados por “:”:
+El archivo debe contener cinco campos separados por (`“:”`)
 
 usuario:comentario:/ruta/home:SI|NO:/ruta/shell
 
@@ -83,30 +78,34 @@ crear home -> Debe ser SI o NO (mayúsculas / minúsculas permitidas)
 shell -> Puede estar vacío
 
 ## Ejemplos válidos:
+
 juan:Usuario Juan:/home/juan:SI:/bin/bash
+
 maria::/home/maria:NO:/bin/zsh
+
 pedro:DevOps::SI:/bin/sh
+
 lucas:::: 
 
 
 ## Uso del script
 
 Ejecución básica:
-
+```
 sudo ./ej1_crea_usuarios.sh archivo_usuarios
-
+```
 Crear usuarios asignando la misma contraseña:
-
+```
 sudo ./ej1_crea_usuarios.sh -c Contraseña123 archivo_usuarios
-
+```
 Mostrar información detallada:
-
+```
 sudo ./ej1_crea_usuarios.sh -i archivo_usuarios
-
+```
 Modo combinado: información + contraseña:
-
+```
 sudo ./ej1_crea_usuarios.sh -c 1234 -i archivo_usuarios
-
+```
 Comportamiento si NO se especifica contraseña: 
 
 El usuario se crea sin contraseña
@@ -115,23 +114,27 @@ Se podrá asignar posteriormente usando passwd usuario
 
 # 🚦 Códigos de error
 
-1 -> Falta contraseña después de -c
-2 -> Parámetro inválido
-3 -> Uso incorrecto (cantidad de parámetros)
-4 -> Archivo inexistente
-5 -> Archivo no regular
-6 -> Sin permisos de lectura
-7 -> Script no ejecutado como root
-8 -> Sintaxis incorrecta en una línea
-9 -> Error en la creación de algún usuario
-0 -> Ejecución exitosa
-
+| Código | Descripción                                      |
+|--------|--------------------------------------------------|
+| 1      | Falta contraseña después de `-c`                 |
+| 2      | Parámetro inválido                               |
+| 3      | Uso incorrecto (cantidad de parámetros)          |
+| 4      | Archivo inexistente                              |
+| 5      | Archivo no regular                               |
+| 6      | Sin permisos de lectura                          |
+| 7      | Script no ejecutado como root                    |
+| 8      | Sintaxis incorrecta en una línea del archivo     |
+| 9      | Error durante la creación de uno o más usuarios  |
+| 0      | Ejecución exitosa                                |
 
 ##  Valores por defecto aplicados
 
 Comentario ->	<valor por defecto>
+
 Directorio home	-> Depende de useradd
+
 Crear home	-> -M o -m según campo SI/NO
+
 Shell	-> La shell por defecto del sistema si está vacía
 
 # Resultado final:
@@ -154,12 +157,7 @@ ssh-keygen -t ed25519 -C "tu_mail@fi.ort.edu.uy"
 
 Presioná ENTER tres veces para aceptar los valores por defecto.
 
-Tu clave pública queda en:
-```
-~/.ssh/id_ed25519.pub
-```
-Mostrar la clave pública
-
+Mostrar la clave pública:
 ```
 cat ~/.ssh/id_ed25519.pub
 ```
