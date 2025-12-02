@@ -25,14 +25,6 @@ Este script automatiza la creación de usuarios en Linux a partir de un archivo 
 
 - El campo “crear home” debe ser SI o NO
 
-
-### Formato del archivo de entrada
-
-El archivo debe contener cinco campos separados por (`“:”`)
-
-usuario:comentario:/ruta/home:SI|NO:/ruta/shell
-
-
 ##  Valores por defecto aplicados
 
 - Comentario > (`<valor por defecto>`)
