@@ -67,15 +67,15 @@ usuario:comentario:/ruta/home:SI|NO:/ruta/shell
 
 ## Reglas
 
-usuario	-> No puede estar vacío
+- usuario > No puede estar vacío
+ 
+- comentario > Puede estar vacío
 
-comentario -> Puede estar vacío
+- home > Si está vacío, useradd usa su valor por defecto
 
-home -> Si está vacío, useradd usa su valor por defecto
+- crear home > Debe ser SI o NO (mayúsculas / minúsculas permitidas)
 
-crear home -> Debe ser SI o NO (mayúsculas / minúsculas permitidas)
-
-shell -> Puede estar vacío
+- shell > Puede estar vacío
 
 ## Ejemplos válidos
 
