@@ -57,10 +57,20 @@ sudo ./aws/install
 ```
 
 
-Configurar AWS CLI (si corresponde)
+## Configurar AWS CLI (si corresponde)
 ```
 aws configure
 ```
+Aquí nos va a solicitar los datos para la conexión contra el AWS Academy, agregar:
+
+aws_access_key_id=
+aws_secret_access_key=
+aws_session_token=
+Region: [us-east-1]
+Format: [json]
+
+ Estos datos nos los encontramos en AWS Details, dentro del Lab. 
+
 ## 📂 Ubicarte dentro del proyecto
 
 Debés estar en:
