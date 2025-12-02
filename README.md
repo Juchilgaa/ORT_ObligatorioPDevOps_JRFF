@@ -106,6 +106,15 @@ python3 automatismo_rrhh.py
 ```
 ## 📄 Salida
 === DESPLIEGUE COMPLETADO ===
+
+
 URL de la aplicación: http://X.X.X.X/index.php
+
+
 APP_USER: admin
+
+
 APP_PASS: admin123
+
+
+¡¡ Automatismo ejecutado !!
