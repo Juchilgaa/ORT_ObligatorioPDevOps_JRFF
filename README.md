@@ -1,5 +1,7 @@
 # Parte 1 - Script BASH
 
+Este script automatiza la creación de usuarios en Linux a partir de un archivo estructurado, realizando validaciones de sintaxis, control de parámetros y manejo seguro de campos opcionales. Permite asignar una contraseña común a los usuarios creados y cuenta con un modo informativo que detalla cada paso del proceso de creación.
+***
 
 ## Validación de parámetros:
 
@@ -24,8 +26,6 @@ El nombre de usuario (campo 1) no puede estar vacío
 El campo “crear home” debe ser SI o NO
 
 # Requisitos del sistema
-
-***
 
 Debe ejecutarse como root, de lo contrario el script aborta
 
