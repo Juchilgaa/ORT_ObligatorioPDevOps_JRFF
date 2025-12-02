@@ -28,7 +28,7 @@ Navegar a Settings → SSH and GPG Keys
 
 Hacer clic en New SSH key, pegar la clave generada.
 
-## Instalación de las herramientas Git
+## 🛠️ Instalación de las herramientas GIT
 ```
 git --version
 sudo apt update && sudo apt install -y git
