@@ -51,6 +51,7 @@ Este script automatiza la creación de usuarios en Linux a partir de un archivo 
 
 #### Requisitos del sistema
 
+***
 Debe ejecutarse como #root, de lo contrario el script aborta
 
 ***
