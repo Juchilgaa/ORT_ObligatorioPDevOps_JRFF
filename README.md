@@ -1,4 +1,150 @@
-# 📌 Despliegue de APP RRHH
+# Parte 1 - Script BASH
+
+# Características principales
+
+## Validación de parámetros:
+
+Procesa los modificadores -i y -c <pass>
+
+Rechaza modificadores inválidos
+
+Exige exactamente 1 archivo de entrada tras procesar opciones
+
+## Validación del archivo de entrada:
+
+Verifica que el archivo exista
+
+Sea un archivo regular
+
+Tenga permisos de lectura
+
+Tenga exactamente 5 campos separados por “:”
+
+El nombre de usuario (campo 1) no puede estar vacío
+
+El campo “crear home” debe ser SI o NO
+
+# Requisitos del sistema
+
+Debe ejecutarse como root, de lo contrario el script aborta
+
+# Creación de usuarios
+
+El script crea usuarios utilizando:
+
+Comentario (-c)
+
+Directorio home (-d)
+
+Creación o no del home (-m / -M)
+
+Shell (-s)
+
+Asignación opcional de contraseña (si se usa -c contraseña)
+
+Manejo de valores vacíos con defaults propios del sistema (useradd)
+
+# Modo informativo (-i)
+
+Muestra:
+
+Comentario
+
+Directorio home
+
+SI/NO de creación del home
+
+Shell asignada
+
+Aviso si no se pudo asignar contraseña
+
+Aviso si el usuario no pudo ser creado
+
+# Reporte final
+
+Al finalizar, si se usó -i, muestra la cantidad de usuarios creados con éxito.
+
+# Formato del archivo de entrada
+
+El archivo debe contener cinco campos separados por “:”:
+
+usuario:comentario:/ruta/home:SI|NO:/ruta/shell
+
+## Reglas:
+
+usuario	-> No puede estar vacío
+
+comentario -> Puede estar vacío
+
+home -> Si está vacío, useradd usa su valor por defecto
+
+crear home -> Debe ser SI o NO (mayúsculas / minúsculas permitidas)
+
+shell -> Puede estar vacío
+
+## Ejemplos válidos:
+juan:Usuario Juan:/home/juan:SI:/bin/bash
+maria::/home/maria:NO:/bin/zsh
+pedro:DevOps::SI:/bin/sh
+lucas:::: 
+
+
+## Uso del script
+
+Ejecución básica:
+
+sudo ./ej1_crea_usuarios.sh archivo_usuarios
+
+Crear usuarios asignando la misma contraseña:
+
+sudo ./ej1_crea_usuarios.sh -c Contraseña123 archivo_usuarios
+
+Mostrar información detallada:
+
+sudo ./ej1_crea_usuarios.sh -i archivo_usuarios
+
+Modo combinado: información + contraseña:
+
+sudo ./ej1_crea_usuarios.sh -c 1234 -i archivo_usuarios
+
+Comportamiento si NO se especifica contraseña: 
+
+El usuario se crea sin contraseña
+
+Se podrá asignar posteriormente usando passwd usuario
+
+#🚦 Códigos de error
+
+1 -> Falta contraseña después de -c
+2 -> Parámetro inválido
+3 -> Uso incorrecto (cantidad de parámetros)
+4 -> Archivo inexistente
+5 -> Archivo no regular
+6 -> Sin permisos de lectura
+7 -> Script no ejecutado como root
+8 -> Sintaxis incorrecta en una línea
+9 -> Error en la creación de algún usuario
+0 -> Ejecución exitosa
+
+
+## 📌 Valores por defecto aplicados
+
+Comentario ->	<valor por defecto>
+Directorio home	-> Depende de useradd
+Crear home	-> -M o -m según campo SI/NO
+Shell	-> La shell por defecto del sistema si está vacía
+
+# Resultado final:
+
+El script muestra:
+
+Se crearon <n> usuarios con éxito.
+
+
+
+# Parte 2 - Automatización APP RRHH AWS
+
+ 📌 Despliegue de APP RRHH
 
 
 ## 🔐 Generar SSH Key en Linux
