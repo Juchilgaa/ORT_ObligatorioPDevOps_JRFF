@@ -2,7 +2,6 @@
 
 # Import de las librerias necesarias
 
-
 import os
 import time
 import zipfile
@@ -12,10 +11,7 @@ import random
 import boto3
 from botocore.exceptions import ClientError
 
-
-# ===============================
 # VARIABLES DE ENTORNO
-# ===============================
 
 RDS_ADMIN_PASSWORD = os.environ.get("RDS_ADMIN_PASSWORD")
 APP_USER = os.environ.get("APP_USER")
@@ -30,10 +26,7 @@ if not RDS_ADMIN_PASSWORD or not APP_USER or not APP_PASS:
         "  export APP_PASS='admin123'\n"
     )
 
-
-# ===========================================
 # ARCHIVOS / NOMBRES EN S3
-# ===========================================
 
 BUCKET_PREFIX = "jrff-rrhh-app"
 RRHH_BUCKET = None
@@ -47,17 +40,14 @@ OBLIG_ZIP_NAME = "obligatorio-main.zip"
 OBLIG_ZIP_PATH = os.path.join(SCRIPT_DIR, OBLIG_ZIP_NAME)
 
 
-# ========== CLIENTES BOTO3 ==========
+#  CLIENTES BOTO3 
 
 ec2 = boto3.client("ec2")
 rds = boto3.client("rds")
 ssm = boto3.client("ssm")
 s3 = boto3.client("s3")
 
-
-# ===============================
 # CONSTANTES
-# ===============================
 
 DB_INSTANCE_ID = "rrhh-mysql"
 DB_NAME = "demo_db"  # Nombre de la BD creada por el archivo init_db.sql
@@ -71,10 +61,7 @@ INSTANCE_PROFILE_NAME = "LabInstanceProfile"
 
 print("****** Automatismo RRHH – Inicio ******\n")
 
-
-# ===========================================
 # Crear bucket S3 dinámicamente
-# ===========================================
 
 print(f"[S3] Generando el bucket S3.... Nombre: '{BUCKET_PREFIX}'...")
 
@@ -112,10 +99,7 @@ print("=======================================")
 print(f" RRHH_BUCKET = {RRHH_BUCKET}")
 print("=======================================\n")
 
-
-# ===========================================
 # Preparar ZIP de la app y SQL desde obligatorio-main.zip
-# ===========================================
 
 print("[S3] Preparando archivos a partir de obligatorio-main.zip...")
 
@@ -130,7 +114,7 @@ temp_dir = tempfile.mkdtemp(prefix="rrhh_")
 print(f"[TMP] Directorio temporal: {temp_dir}")
 
 try:
-    # Descomprimir obligatorio-main.zip
+# Descomprimir obligatorio-main.zip
     print(f"[ZIP] Descomprimiendo {OBLIG_ZIP_PATH} ...")
     with zipfile.ZipFile(OBLIG_ZIP_PATH, "r") as z:
         z.extractall(temp_dir)
@@ -142,7 +126,7 @@ try:
             "Revisá la estructura de obligatorio-main.zip."
         )
 
-    #  Ubicar el SQL (init_db.sql en la raíz de obligatorio-main)
+#  Ubicar el SQL (init_db.sql en la raíz de obligatorio-main)
     local_sql_path = os.path.join(app_root, SQL_KEY)
     if not os.path.isfile(local_sql_path):
         raise SystemExit(
@@ -150,7 +134,7 @@ try:
             "Asegurate de que el SQL esté con ese nombre en la raíz de la app."
         )
 
-    # Crea paquete_app_rrhh.zip con solo la app
+# Crea paquete_app_rrhh.zip con solo la app
     local_app_zip_path = os.path.join(temp_dir, APP_ZIP_KEY)
     print(f"[ZIP] Creando {local_app_zip_path} desde {app_root} (sin incluir .sql)...")
 
@@ -165,7 +149,7 @@ try:
 
     print("[ZIP] paquete_app_rrhh.zip creado correctamente.")
 
-    # Subir paquete_app_rrhh.zip e init_db.sql a S3
+# Subir paquete_app_rrhh.zip e init_db.sql a S3
     print(f"[S3] Subiendo {local_app_zip_path} a s3://{RRHH_BUCKET}/{APP_ZIP_KEY} ...")
     s3.upload_file(local_app_zip_path, RRHH_BUCKET, APP_ZIP_KEY)
     print("[S3] Upload paquete_app_rrhh.zip OK.")
@@ -201,10 +185,7 @@ except ClientError:
 
 print("[S3] Archivos requeridos presentes. Continuando con el despliegue...\n")
 
-
-# ===============================
 # Crea RDS - Mysql
-# ===============================
 
 print("[RDS] Creando o recuperando RDS...")
 
@@ -246,9 +227,9 @@ while True:
     time.sleep(3)
 
 
-# ===============================
+
 # Crea SGs (web y BD) y luego EC2
-# ===============================
+
 
 print("[SG] Creando o recuperando Security Group web...")
 
@@ -257,7 +238,7 @@ vpc_id = vpcs["Vpcs"][0]["VpcId"]
 
 sg_id = None  # SG de la web (EC2)
 
-# --- SG WEB (HTTP) ---
+# SG WEB (HTTP) 
 try:
     response = ec2.create_security_group(
         GroupName=WEB_SG_NAME,
@@ -300,7 +281,7 @@ if sg_id is None:
     raise SystemExit("ERROR: No se pudo determinar el ID del Security Group web (sg_id).")
 
 
-# --- SG BD (RDS MySQL) ---
+#  SG BD (RDS MySQL) 
 
 print("[SG] Creando o recuperando Security Group de base de datos...")
 
@@ -315,7 +296,7 @@ try:
     db_sg_id = response["GroupId"]
     print(f"[SG] SG BD creado: {db_sg_id}")
 
-    # Permitir 3306 solo desde el SG web
+# Permitir 3306 solo desde el SG web
     ec2.authorize_security_group_ingress(
         GroupId=db_sg_id,
         IpPermissions=[
@@ -385,9 +366,9 @@ print(f"[SG] Usando Security Group web: {sg_id}")
 print(f"[SG] Usando Security Group BD : {db_sg_id}\n")
 
 
-# ===============================
+
 # Creación de la EC2
-# ===============================
+
 
 print("\n[EC2] Creando instancia EC2 web...")
 
@@ -418,10 +399,7 @@ public_ip = desc["Reservations"][0]["Instances"][0]["PublicIpAddress"]
 
 print(f"[EC2] La IP pública asignada es: {public_ip}")
 
-
-# ===============================
 # Config APP via SSM
-# ===============================
 
 print("[SSM] Configurando app RRHH dentro de EC2...")
 
