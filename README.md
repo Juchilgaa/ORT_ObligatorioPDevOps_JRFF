@@ -28,6 +28,11 @@ Navegar a Settings → SSH and GPG Keys
 
 Hacer clic en New SSH key, pegar la clave generada.
 
+## Instalación de las herramientas Git
+```
+git --version
+sudo apt update && sudo apt install -y git
+```
 ## 📥 Clonar el repositorio por SSH
 ```
 git clone git@github.com:Juchilgaa/ORT_ObligatorioPDevOps_JRFF.git
@@ -39,8 +44,18 @@ cd ORT_ObligatorioPDevOps_JRFF/automatismo_app
 sudo apt update && sudo apt install python3 -y
 sudo apt install python3-pip -y
 sudo apt install python3-venv -y
-sudo apt install awscli -y
 ```
+
+## AWS CLI, lo separamos ya que es importante para el deploy
+```
+sudo apt update
+sudo apt install -y unzip curl
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+```
+
 
 Configurar AWS CLI (si corresponde)
 ```
