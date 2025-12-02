@@ -1,6 +1,5 @@
 # Parte 1 - Script BASH
 
-# Características principales
 
 ## Validación de parámetros:
 
@@ -26,7 +25,11 @@ El campo “crear home” debe ser SI o NO
 
 # Requisitos del sistema
 
+***
+
 Debe ejecutarse como root, de lo contrario el script aborta
+
+***
 
 # Creación de usuarios
 
@@ -113,7 +116,7 @@ El usuario se crea sin contraseña
 
 Se podrá asignar posteriormente usando passwd usuario
 
-#🚦 Códigos de error
+# 🚦 Códigos de error
 
 1 -> Falta contraseña después de -c
 2 -> Parámetro inválido
@@ -127,7 +130,7 @@ Se podrá asignar posteriormente usando passwd usuario
 0 -> Ejecución exitosa
 
 
-## 📌 Valores por defecto aplicados
+##  Valores por defecto aplicados
 
 Comentario ->	<valor por defecto>
 Directorio home	-> Depende de useradd
