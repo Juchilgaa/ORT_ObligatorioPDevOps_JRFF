@@ -26,11 +26,7 @@ Ir a GitHub
 
 Navegar a Settings → SSH and GPG Keys
 
-Hacer clic en New SSH key
-
-Pegar la clave generada
-
-Confirmar con Add SSH key
+Hacer clic en New SSH key, pegar la clave generada.
 
 ## 📥 Clonar el repositorio por SSH
 ```
