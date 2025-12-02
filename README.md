@@ -5,7 +5,7 @@ Este script automatiza la creación de usuarios en Linux a partir de un archivo 
 
 ## Validación de parámetros:
 
-- Procesa los modificadores -i y -c <pass>
+- Procesa los modificadores -i y -c <pass> en dicho orden!
 
 - Rechaza modificadores inválidos
 
@@ -104,7 +104,7 @@ sudo ./ej1_crea_usuarios.sh -i archivo_usuarios.txt
 ```
 Modo combinado: información + contraseña:
 ```
-sudo ./ej1_crea_usuarios.sh -c 1234 -i archivo_usuarios.txt
+sudo ./ej1_crea_usuarios.sh -i -c 1234 archivo_usuarios.txt
 ```
 Comportamiento si NO se especifica contraseña: 
 
@@ -129,7 +129,7 @@ Se podrá asignar posteriormente usando passwd usuario
 
 ##  Valores por defecto aplicados
 
-- Comentario > <valor por defecto>
+- Comentario > (`<valor por defecto>`)
 
 - Directorio home > Depende de useradd
 
