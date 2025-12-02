@@ -1,102 +1,79 @@
-#  Despliegue de APP RRHH
+📌 Despliegue de APP RRHH
 
 
+1. 🔐 Generar SSH Key en Linux
+ssh-keygen -t ed25519 -C "tu_mail@fi.ort.edu.uy"
 
-## Generar una SSH key en Linux
-ssh-keygen -t ed25519 -C "tu_mail@fiort.edu.uy"
 
-Presioná ENTER tres veces.
+Presioná ENTER tres veces para aceptar los valores por defecto.
 
 Tu clave pública queda en:
 
 ~/.ssh/id_ed25519.pub
 
-## Mostrar la clave pública
+Mostrar la clave pública
 cat ~/.ssh/id_ed25519.pub
 
 
 Copiá el texto completo (empieza con ssh-ed25519).
 
-## Agregar la SSH key en GitHub
+2. 🔑 Agregar la SSH Key en GitHub
 
 Ir a GitHub
 
-Ir a: Settings → SSH and GPG Keys
+Navegar a Settings → SSH and GPG Keys
 
-Clic en New SSH key
+Hacer clic en New SSH key
 
-Pegás tu key → Add SSH key
+Pegar la clave generada
 
-***** Clonar el repo por SSH
-En la terminal:
+Confirmar con Add SSH key
 
-$git clone git@github.com:Juchilgaa/ORT_ObligatorioPDevOps_JRFF.git
-$cd ORT_ObligatorioPDevOps_JRFF/automatismo_app
+3. 📥 Clonar el repositorio por SSH
+git clone git@github.com:Juchilgaa/ORT_ObligatorioPDevOps_JRFF.git
+cd ORT_ObligatorioPDevOps_JRFF/automatismo_app
 
-Requisitos
+4. 🛠️ Instalar herramientas necesarias
+sudo apt update && sudo apt install python3 -y
+sudo apt install python3-pip -y
+sudo apt install python3-venv -y
+sudo apt install awscli -y
 
-## Instalar herramientas necesarias: Python 3, Pip, venv, AWS CLI
+Configurar AWS CLI (si corresponde)
+aws configure
 
-$sudo apt update && sudo apt install python3 -y
-$sudo apt install python3-pip -y
-$sudo apt install python3-venv -y
-$sudo apt install awscli -y
+5. 📂 Ubicarte dentro del proyecto
 
-### Si en AWS CLI necesitás configurar claves:
-
-$aws configure
-
-Ubicate en:
+Debés estar en:
 
 ORT_ObligatorioPDevOps_JRFF/automatismo_app/
+
 
 Deberías ver:
 
 automatismo_rrhh.py
 obligatorio-main.zip
 
-## Crear entorno virtual
-$python3 -m venv .venv
-$source .venv/bin/activate
+6. 🧪 Crear entorno virtual
+python3 -m venv .venv
+source .venv/bin/activate
 
-## Instalar dependencias boto3:
-$pip install boto3
+7. 📦 Instalar dependencias
+pip install boto3
 
-Configurar variables de entorno:
+8. 🔧 Configurar variables de entorno
 
-El script requiere tres variables:
+El script requiere:
 
 export RDS_ADMIN_PASSWORD='ClaveSegura123!!'
 export APP_USER='admin'
 export APP_PASS='admin123'
 
+9. 🚀 Ejecutar el despliegue
+python3 automatismo_rrhh.py
 
-Si falta alguna, el script se detiene.
-
-## Ejecutar el despliegue
-
-Desde la carpeta automatismo_app con el venv activado:
-
-$python3 automatismo_rrhh.py
-
-
-Salida típica:
-
+10. 📄 Salida típica
 === DESPLIEGUE COMPLETADO ===
 URL de la aplicación: http://X.X.X.X/index.php
 APP_USER: admin
 APP_PASS: admin123
-
-Estructura del proyecto
- 
-ORT_ObligatorioPDevOps_JRFF/
-│
-├── automatismo_app/
-│     ├── automatismo_rrhh.py
-│     ├── obligatorio-main.zip
-│     └── (archivos generados por el script)
-│
-├── script_bash.sh
-├── archivo.txt
-└── README.md
-
