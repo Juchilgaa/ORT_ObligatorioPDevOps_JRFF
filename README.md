@@ -33,19 +33,16 @@ Debe ejecutarse como root, de lo contrario el script aborta
 
 # Creación de usuarios
 
-El script crea usuarios utilizando:
+El script crea usuarios utilizando las siguientes opciones internas de `useradd`:
 
-Comentario (-c)
+- Comentario (`-c`)
+- Directorio home (`-d`)
+- Creación o no del home (`-m` / `-M`)
+- Shell de inicio (`-s`)
 
-Directorio home (-d)
+Además, el script cuenta con una opción propia:
 
-Creación o no del home (-m / -M)
-
-Shell (-s)
-
-Asignación opcional de contraseña (si se usa -c contraseña)
-
-Manejo de valores vacíos con defaults propios del sistema (useradd)
+- `-c <contraseña>` del **script** para asignar una contraseña común a todos los usuarios creados.
 
 # Modo informativo (-i)
 
