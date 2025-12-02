@@ -75,9 +75,9 @@ El script crea usuarios utilizando las siguientes opciones internas de `useradd`
 
 Además, el script cuenta con una opción propia:
 
-- `-c <contraseña>` del **script** para asignar una contraseña común a todos los usuarios creados.
+- (``-c <contraseña>``) del **script** para asignar una contraseña común a todos los usuarios creados.
 
-# Modo informativo (-i)
+## Modo informativo (-i)
 
 Despliega: 
 
@@ -147,7 +147,7 @@ Al finalizar, si se usó -i, muestra la cantidad de usuarios creados con éxito.
 
 # Resultado final
 
-El script muestra: Se crearon <n> usuarios con éxito.
+**El script muestra: Se crearon (`<n>`) usuarios con éxito**
 
 ***
 
