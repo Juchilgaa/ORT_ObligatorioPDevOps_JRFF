@@ -25,11 +25,26 @@ Este script automatiza la creación de usuarios en Linux a partir de un archivo 
 
 - El campo “crear home” debe ser SI o NO
 
-# Requisitos del sistema
+
+### Reglas
+
+- usuario > No puede estar vacío
+ 
+- comentario > Puede estar vacío
+
+- home > Si está vacío, useradd usa su valor por defecto
+
+- crear home > Debe ser SI o NO (mayúsculas / minúsculas permitidas)
+
+- shell > Puede estar vacío
+
+
+#### Requisitos del sistema
 
 Debe ejecutarse como #root, de lo contrario el script aborta
 
 ***
+
 
 # Creación de usuarios
 
@@ -65,17 +80,6 @@ El archivo debe contener cinco campos separados por (`“:”`)
 
 usuario:comentario:/ruta/home:SI|NO:/ruta/shell
 
-## Reglas
-
-- usuario > No puede estar vacío
- 
-- comentario > Puede estar vacío
-
-- home > Si está vacío, useradd usa su valor por defecto
-
-- crear home > Debe ser SI o NO (mayúsculas / minúsculas permitidas)
-
-- shell > Puede estar vacío
 
 ## Ejemplos válidos
 
