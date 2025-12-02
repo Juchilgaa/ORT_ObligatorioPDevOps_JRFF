@@ -27,7 +27,7 @@ Este script automatiza la creación de usuarios en Linux a partir de un archivo 
 
 # Requisitos del sistema
 
-Debe ejecutarse como root, de lo contrario el script aborta
+Debe ejecutarse como #root, de lo contrario el script aborta
 
 ***
 
@@ -65,7 +65,7 @@ El archivo debe contener cinco campos separados por (`“:”`)
 
 usuario:comentario:/ruta/home:SI|NO:/ruta/shell
 
-## Reglas:
+## Reglas
 
 usuario	-> No puede estar vacío
 
@@ -77,7 +77,7 @@ crear home -> Debe ser SI o NO (mayúsculas / minúsculas permitidas)
 
 shell -> Puede estar vacío
 
-## Ejemplos válidos:
+## Ejemplos válidos
 
 juan:Usuario Juan:/home/juan:SI:/bin/bash
 
@@ -92,19 +92,19 @@ lucas::::
 
 Ejecución básica:
 ```
-sudo ./ej1_crea_usuarios.sh archivo_usuarios
+sudo ./ej1_crea_usuarios.sh archivo_usuarios.txt
 ```
 Crear usuarios asignando la misma contraseña:
 ```
-sudo ./ej1_crea_usuarios.sh -c Contraseña123 archivo_usuarios
+sudo ./ej1_crea_usuarios.sh -c Contraseña123 archivo_usuarios.txt
 ```
 Mostrar información detallada:
 ```
-sudo ./ej1_crea_usuarios.sh -i archivo_usuarios
+sudo ./ej1_crea_usuarios.sh -i archivo_usuarios.txt
 ```
 Modo combinado: información + contraseña:
 ```
-sudo ./ej1_crea_usuarios.sh -c 1234 -i archivo_usuarios
+sudo ./ej1_crea_usuarios.sh -c 1234 -i archivo_usuarios.txt
 ```
 Comportamiento si NO se especifica contraseña: 
 
@@ -129,13 +129,13 @@ Se podrá asignar posteriormente usando passwd usuario
 
 ##  Valores por defecto aplicados
 
-Comentario ->	<valor por defecto>
+- Comentario > <valor por defecto>
 
-Directorio home	-> Depende de useradd
+- Directorio home > Depende de useradd
 
-Crear home	-> -M o -m según campo SI/NO
+- Crear home	> -M o -m según campo SI/NO
 
-Shell	-> La shell por defecto del sistema si está vacía
+- Shell	> La shell por defecto del sistema si está vacía
 
 # Resultado final:
 
