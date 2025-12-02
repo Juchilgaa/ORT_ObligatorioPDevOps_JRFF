@@ -3,7 +3,7 @@
 Este script automatiza la creación de usuarios en Linux a partir de un archivo estructurado, realizando validaciones de sintaxis, control de parámetros y manejo seguro de campos opcionales. Permite asignar una contraseña común a los usuarios creados y cuenta con un modo informativo que detalla cada paso del proceso de creación.
 ***
 
-## Validación de parámetros:
+## Validación de parámetros
 
 - Procesa los modificadores -i y -c <pass> en dicho orden!
 
@@ -11,7 +11,7 @@ Este script automatiza la creación de usuarios en Linux a partir de un archivo 
 
 - Exige exactamente 1 archivo de entrada tras procesar opciones
 
-## Validación del archivo de entrada:
+## Validación del archivo de entrada
 
 - Verifica que el archivo exista
 
@@ -24,6 +24,24 @@ Este script automatiza la creación de usuarios en Linux a partir de un archivo 
 - El nombre de usuario (campo 1) no puede estar vacío
 
 - El campo “crear home” debe ser SI o NO
+
+
+### Formato del archivo de entrada
+
+El archivo debe contener cinco campos separados por (`“:”`)
+
+usuario:comentario:/ruta/home:SI|NO:/ruta/shell
+
+
+##  Valores por defecto aplicados
+
+- Comentario > (`<valor por defecto>`)
+
+- Directorio home > Depende de useradd
+
+- Crear home > -M o -m según campo SI/NO
+
+- Shell	> La shell por defecto del sistema si está vacía
 
 
 ### Reglas
@@ -70,16 +88,6 @@ Despliega:
 - Aviso si no se pudo asignar contraseña
 - Aviso si el usuario no pudo ser creado
 
-# Reporte final
-
-Al finalizar, si se usó -i, muestra la cantidad de usuarios creados con éxito.
-
-# Formato del archivo de entrada
-
-El archivo debe contener cinco campos separados por (`“:”`)
-
-usuario:comentario:/ruta/home:SI|NO:/ruta/shell
-
 
 ## Ejemplos válidos
 
@@ -116,6 +124,12 @@ El usuario se crea sin contraseña
 
 Se podrá asignar posteriormente usando passwd usuario
 
+
+# Reporte final
+
+Al finalizar, si se usó -i, muestra la cantidad de usuarios creados con éxito.
+
+
 # 🚦 Códigos de error
 
 | Código | Descripción                                      |
@@ -130,16 +144,6 @@ Se podrá asignar posteriormente usando passwd usuario
 | 8      | Sintaxis incorrecta en una línea del archivo     |
 | 9      | Error durante la creación de uno o más usuarios  |
 | 0      | Ejecución exitosa                                |
-
-##  Valores por defecto aplicados
-
-- Comentario > (`<valor por defecto>`)
-
-- Directorio home > Depende de useradd
-
-- Crear home	> -M o -m según campo SI/NO
-
-- Shell	> La shell por defecto del sistema si está vacía
 
 # Resultado final
 
