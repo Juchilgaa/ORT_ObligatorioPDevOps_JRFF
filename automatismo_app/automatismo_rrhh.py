@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
-"""
-automatismo_rrhh.py
-Script lineal (sin funciones) que automatiza el despliegue RRHH en AWS.
 
-Flujo:
-- Genera un bucket S3 global "jrff-rrhh-appXXXX" (XXXX = 4 dígitos).
-- Usa obligatorio-main.zip (en el mismo directorio del script):
-    - Lo descomprime.
-    - Empaqueta la app (sin init_db.sql) en paquete_app_rrhh.zip.
-    - Sube paquete_app_rrhh.zip e init_db.sql al bucket.
-- Verifica que esos objetos estén en el bucket.
-- Crea / reutiliza RDS MySQL.
-- Crea / reutiliza Security Groups web y BD.
-- Crea EC2.
-- Configura la app vía SSM usando los archivos del bucket.
-"""
+# Import de las librerias necesarias
+
 
 import os
 import time
@@ -136,14 +123,14 @@ if not os.path.isfile(OBLIG_ZIP_PATH):
     raise SystemExit(
         f"ERROR: No se encontró '{OBLIG_ZIP_NAME}' en el directorio del script:\n"
         f"  {SCRIPT_DIR}\n"
-        "Copiá o descargá obligatorio-main.zip allí y volvé a ejecutar."
+        "Copiá o descarga obligatorio-main.zip allí y volvé a ejecutar."
     )
 
 temp_dir = tempfile.mkdtemp(prefix="rrhh_")
 print(f"[TMP] Directorio temporal: {temp_dir}")
 
 try:
-    # 1) Descomprimir obligatorio-main.zip
+    # Descomprimir obligatorio-main.zip
     print(f"[ZIP] Descomprimiendo {OBLIG_ZIP_PATH} ...")
     with zipfile.ZipFile(OBLIG_ZIP_PATH, "r") as z:
         z.extractall(temp_dir)
@@ -155,7 +142,7 @@ try:
             "Revisá la estructura de obligatorio-main.zip."
         )
 
-    # 2) Ubicar el SQL (init_db.sql en la raíz de obligatorio-main)
+    #  Ubicar el SQL (init_db.sql en la raíz de obligatorio-main)
     local_sql_path = os.path.join(app_root, SQL_KEY)
     if not os.path.isfile(local_sql_path):
         raise SystemExit(
@@ -163,7 +150,7 @@ try:
             "Asegurate de que el SQL esté con ese nombre en la raíz de la app."
         )
 
-    # 3) Crear paquete_app_rrhh.zip con solo la app (sin .sql)
+    # Crea paquete_app_rrhh.zip con solo la app
     local_app_zip_path = os.path.join(temp_dir, APP_ZIP_KEY)
     print(f"[ZIP] Creando {local_app_zip_path} desde {app_root} (sin incluir .sql)...")
 
@@ -178,7 +165,7 @@ try:
 
     print("[ZIP] paquete_app_rrhh.zip creado correctamente.")
 
-    # 4) Subir paquete_app_rrhh.zip e init_db.sql a S3
+    # Subir paquete_app_rrhh.zip e init_db.sql a S3
     print(f"[S3] Subiendo {local_app_zip_path} a s3://{RRHH_BUCKET}/{APP_ZIP_KEY} ...")
     s3.upload_file(local_app_zip_path, RRHH_BUCKET, APP_ZIP_KEY)
     print("[S3] Upload paquete_app_rrhh.zip OK.")
@@ -191,7 +178,7 @@ finally:
     shutil.rmtree(temp_dir, ignore_errors=True)
     print(f"[TMP] Directorio temporal eliminado: {temp_dir}\n")
 
-# 5) Verificar existencia de objetos en S3
+# Verificar existencia de objetos en S3
 print("[S3] Verificando que los archivos estén presentes en el bucket...")
 
 try:
