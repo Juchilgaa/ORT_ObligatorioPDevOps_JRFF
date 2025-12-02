@@ -137,13 +137,11 @@ Se podrá asignar posteriormente usando passwd usuario
 
 - Shell	> La shell por defecto del sistema si está vacía
 
-# Resultado final:
+# Resultado final
 
-El script muestra:
+El script muestra: Se crearon <n> usuarios con éxito.
 
-Se crearon <n> usuarios con éxito.
-
-
+***
 
 # Parte 2 - Automatización APP RRHH AWS
 
