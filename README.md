@@ -142,6 +142,7 @@ Ejecución básica:
 Ubicarse sobre el directorio ./script_bash/
 
 
+
 ```
 sudo ./ej1_crea_usuarios.sh archivo_usuarios.txt
 ```
