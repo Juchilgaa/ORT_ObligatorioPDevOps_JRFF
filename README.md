@@ -1,3 +1,37 @@
+# Obligatorio Programación para DevOps Universidad ORT - N4B Fabian Ferreira Nº187374 - Juan Recalde Nº 334170
+
+## 🔐 Generar SSH Key en Linux
+```
+ssh-keygen -t ed25519 -C "tu_mail@fi.ort.edu.uy"
+```
+
+Presioná ENTER tres veces para aceptar los valores por defecto.
+
+Mostrar la clave pública:
+```
+cat ~/.ssh/id_ed25519.pub
+```
+
+Copiá el texto completo (empieza con ssh-ed25519).
+
+## 🔑 Agregar la SSH Key en GitHub
+
+Ir a GitHub
+
+Navegar a Settings → SSH and GPG Keys
+
+Hacer clic en New SSH key, pegar la clave generada.
+
+## 🛠️ Instalación de las herramientas GIT
+```
+git --version
+sudo apt update && sudo apt install -y git
+```
+## 📥 Clonar el repositorio por SSH
+```
+git clone git@github.com:Juchilgaa/ORT_ObligatorioPDevOps_JRFF.git
+```
+
 # Parte 1 - Script BASH
 
 Este script automatiza la creación de usuarios en Linux a partir de un archivo estructurado, realizando validaciones de sintaxis, control de parámetros y manejo seguro de campos opcionales. Permite asignar una contraseña común a los usuarios creados y cuenta con un modo informativo que detalla cada paso del proceso de creación.
@@ -96,6 +130,11 @@ lucas::::
 ## Uso del script
 
 Ejecución básica:
+
+
+Pararse sobre el directorio /script_bash/
+
+
 ```
 sudo ./script_bash/ej1_crea_usuarios.sh archivo_usuarios.txt
 ```
@@ -144,43 +183,13 @@ Al finalizar, si se usó -i, muestra la cantidad de usuarios creados con éxito.
 
 ***
 
+
+
 # Parte 2 - Automatización APP RRHH AWS
 
- 📌 Despliegue de APP RRHH
+## 📌 Despliegue de APP RRHH
 
-
-## 🔐 Generar SSH Key en Linux
-```
-ssh-keygen -t ed25519 -C "tu_mail@fi.ort.edu.uy"
-```
-
-Presioná ENTER tres veces para aceptar los valores por defecto.
-
-Mostrar la clave pública:
-```
-cat ~/.ssh/id_ed25519.pub
-```
-
-Copiá el texto completo (empieza con ssh-ed25519).
-
-## 🔑 Agregar la SSH Key en GitHub
-
-Ir a GitHub
-
-Navegar a Settings → SSH and GPG Keys
-
-Hacer clic en New SSH key, pegar la clave generada.
-
-## 🛠️ Instalación de las herramientas GIT
-```
-git --version
-sudo apt update && sudo apt install -y git
-```
-## 📥 Clonar el repositorio por SSH
-```
-git clone git@github.com:Juchilgaa/ORT_ObligatorioPDevOps_JRFF.git
-cd ORT_ObligatorioPDevOps_JRFF/script_python
-```
+Ir a directorio del automatismo, instalar herramientas necesarias y ejecutarlo.
 
 ## 🛠️ Instalar herramientas necesarias
 ```
@@ -198,7 +207,6 @@ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip
 unzip awscliv2.zip
 sudo ./aws/install
 ```
-
 
 ## Configurar AWS CLI (si corresponde)
 ```
@@ -220,11 +228,15 @@ Debés estar en:
 
 ORT_ObligatorioPDevOps_JRFF/script_python
 
+```
+cd ORT_ObligatorioPDevOps_JRFF/script_python
+```
 
 Deberías ver:
-
+```
 automatismo_rrhh.py
 obligatorio-main.zip
+```
 
 ## 🧪 Crear entorno virtual
 ```
