@@ -139,23 +139,23 @@ sudo ./ej1_crea_usuarios.sh <parámetros> archivo
 Ejecución básica:
 
 
-Pararse sobre el directorio /script_bash/
+Ubicarse sobre el directorio ./script_bash/
 
 
 ```
-sudo ./script_bash/ej1_crea_usuarios.sh archivo_usuarios.txt
+sudo ./ej1_crea_usuarios.sh archivo_usuarios.txt
 ```
 Crear usuarios asignando la misma contraseña:
 ```
-sudo ./script_bash/ej1_crea_usuarios.sh -c Contraseña123 archivo_usuarios.txt
+sudo ./ej1_crea_usuarios.sh -c Contraseña123 archivo_usuarios.txt
 ```
 Mostrar información detallada:
 ```
-sudo ./script_bash/ej1_crea_usuarios.sh -i archivo_usuarios.txt
+sudo ./ej1_crea_usuarios.sh -i archivo_usuarios.txt
 ```
 Modo combinado: información + contraseña:
 ```
-sudo ./script_bash/ej1_crea_usuarios.sh -i -c 1234 archivo_usuarios.txt
+sudo ./ej1_crea_usuarios.sh -i -c 1234 archivo_usuarios.txt
 ```
 Comportamiento si NO se especifica contraseña: 
 
