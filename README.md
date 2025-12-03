@@ -119,7 +119,7 @@ lucas::::
 
 ***
 
-#### Requisitos del sistema
+## Requisitos del sistema
 
 #### Brindar permisos de ejecución al Script
 
@@ -129,8 +129,9 @@ chmod a+x ej1_crea_usuarios.sh
 
 Debe ejecutarse como #root, de lo contrario el script aborta
 
+```
 sudo ./ej1_crea_usuarios.sh
-
+```
 
 
 ## Uso del script
