@@ -97,19 +97,19 @@ lucas::::
 
 Ejecución básica:
 ```
-sudo ./ej1_crea_usuarios.sh archivo_usuarios.txt
+sudo ./script_bash/ej1_crea_usuarios.sh archivo_usuarios.txt
 ```
 Crear usuarios asignando la misma contraseña:
 ```
-sudo ./ej1_crea_usuarios.sh -c Contraseña123 archivo_usuarios.txt
+sudo ./script_bash/ej1_crea_usuarios.sh -c Contraseña123 archivo_usuarios.txt
 ```
 Mostrar información detallada:
 ```
-sudo ./ej1_crea_usuarios.sh -i archivo_usuarios.txt
+sudo ./script_bash/ej1_crea_usuarios.sh -i archivo_usuarios.txt
 ```
 Modo combinado: información + contraseña:
 ```
-sudo ./ej1_crea_usuarios.sh -i -c 1234 archivo_usuarios.txt
+sudo ./script_bash/ej1_crea_usuarios.sh -i -c 1234 archivo_usuarios.txt
 ```
 Comportamiento si NO se especifica contraseña: 
 
