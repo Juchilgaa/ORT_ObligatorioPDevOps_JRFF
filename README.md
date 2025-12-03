@@ -179,7 +179,7 @@ sudo apt update && sudo apt install -y git
 ## 📥 Clonar el repositorio por SSH
 ```
 git clone git@github.com:Juchilgaa/ORT_ObligatorioPDevOps_JRFF.git
-cd ORT_ObligatorioPDevOps_JRFF/automatismo_app
+cd ORT_ObligatorioPDevOps_JRFF/script_python
 ```
 
 ## 🛠️ Instalar herramientas necesarias
@@ -218,7 +218,7 @@ Format: [json]
 
 Debés estar en:
 
-ORT_ObligatorioPDevOps_JRFF/automatismo_app/
+ORT_ObligatorioPDevOps_JRFF/script_python
 
 
 Deberías ver:
