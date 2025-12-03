@@ -130,7 +130,7 @@ chmod a+x ej1_crea_usuarios.sh
 Debe ejecutarse como #root, de lo contrario el script aborta
 
 ```
-sudo ./ej1_crea_usuarios.sh <parametrós> archivo
+sudo ./ej1_crea_usuarios.sh <parámetros> archivo
 ```
 
 
