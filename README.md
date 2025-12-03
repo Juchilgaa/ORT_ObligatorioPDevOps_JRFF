@@ -82,15 +82,6 @@ Este script automatiza la creación de usuarios en Linux a partir de un archivo 
 
 - shell > Puede estar vacío
 
-
-#### Requisitos del sistema
-
-***
-Debe ejecutarse como #root, de lo contrario el script aborta
-
-***
-
-
 # Creación de usuarios
 
 El script crea usuarios utilizando las siguientes opciones internas de `useradd`:
@@ -125,6 +116,21 @@ maria::/home/maria:NO:/bin/zsh
 pedro:DevOps::SI:/bin/sh
 
 lucas:::: 
+
+***
+
+#### Requisitos del sistema
+
+#### Brindar permisos de ejecución al Script
+
+```
+chmod a+x ej1_crea_usuarios.sh
+```
+
+Debe ejecutarse como #root, de lo contrario el script aborta
+
+sudo ./ej1_crea_usuarios.sh
+
 
 
 ## Uso del script
